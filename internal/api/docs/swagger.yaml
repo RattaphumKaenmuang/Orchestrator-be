@@ -1,0 +1,115 @@
+basePath: /
+definitions:
+  main.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  main.GroupListResponse:
+    properties:
+      groups:
+        items:
+          $ref: '#/definitions/model.Group'
+        type: array
+    type: object
+  main.createGroupRequest:
+    properties:
+      name:
+        type: string
+    type: object
+  model.Group:
+    properties:
+      instances:
+        items:
+          $ref: '#/definitions/model.Instance'
+        type: array
+      string:
+        type: string
+    type: object
+  model.Instance:
+    properties:
+      cpu:
+        type: integer
+      gpu:
+        type: boolean
+      id:
+        type: string
+      provider:
+        type: string
+      ram:
+        type: integer
+      status:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Demo API for Group creation and inspection.
+  title: Orchestrator API
+  version: "1.0"
+paths:
+  /groups:
+    get:
+      description: Returns all Groups.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.GroupListResponse'
+      summary: List groups
+      tags:
+      - groups
+    post:
+      consumes:
+      - application/json
+      description: Creates a new Group.
+      parameters:
+      - description: Group payload
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.createGroupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Group'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Create a group
+      tags:
+      - groups
+  /groups/{name}:
+    get:
+      description: Returns one Group by its name.
+      parameters:
+      - description: Group name
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Group'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Get group by name
+      tags:
+      - groups
+swagger: "2.0"
