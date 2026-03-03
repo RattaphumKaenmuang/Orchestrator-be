@@ -3,24 +3,62 @@ package main
 import (
 	"log"
 	"net/http"
+	"strings"
+
+    "orchestrator/internal/store"
 
 	"github.com/gin-gonic/gin"
 )
 
+type createGroupRequest struct {
+    Name string `json:"name"`
+}
+
 func main() {
-	// Create a Gin router with default middleware (logger and recovery)
 	r := gin.Default()
 
-	// Define a simple GET endpoint
 	r.GET("/ping", func(c *gin.Context) {
-		// Return JSON response
 		c.JSON(http.StatusOK, gin.H{
 			"message": "pong",
 		})
 	})
 
-	// Start server on port 8080 (default)
-	// Server will listen on 0.0.0.0:8080 (localhost:8080 on Windows)
+	r.POST("/groups", func(c *gin.Context) {
+        var req createGroupRequest
+        if err := c.ShouldBindJSON(&req); err != nil {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid JSON body"})
+            return
+        }
+
+        name := strings.TrimSpace(req.Name)
+        if name == "" {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "name is required"})
+            return
+        }
+
+        if _, exists := store.GetGroup(name); exists {
+            c.JSON(http.StatusConflict, gin.H{"error": "group already exists"})
+            return
+        }
+
+        g := store.CreateGroup(name)
+        c.JSON(http.StatusCreated, g)
+    })
+
+	r.GET("/groups", func(c *gin.Context) {
+        c.JSON(http.StatusOK, gin.H{"groups": store.ListGroups()})
+    })
+
+    r.GET("/groups/:name", func(c *gin.Context) {
+        name := c.Param("name")
+        g, ok := store.GetGroup(name)
+        if !ok {
+            c.JSON(http.StatusNotFound, gin.H{"error": "group not found"})
+            return
+        }
+        c.JSON(http.StatusOK, g)
+    })
+
 	if err := r.Run(); err != nil {
 		log.Fatalf("failed to run server: %v", err)
 	}
