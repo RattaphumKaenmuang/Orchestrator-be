@@ -55,19 +55,25 @@ func main() {
 
 		// Create in both clouds; rollback on failure
 		var created []provider.Provider
-		for _, p := range providers {
-			if err := p.CreateGroup(c.Request.Context(), name); err != nil {
-				for i := len(created) - 1; i >= 0; i-- {
-					_ = created[i].DeleteGroup(c.Request.Context(), name)
-				}
-				c.JSON(http.StatusBadGateway, gin.H{"error": p.Name() + ": " + err.Error()})
-				return
-			}
-			created = append(created, p)
-		}
+        resourceIDs := make(map[string]string)
 
-		g := store.CreateGroup(name)
-		c.JSON(http.StatusCreated, g)
+        for _, p := range providers {
+            id, err := p.CreateGroup(c.Request.Context(), name)
+            if err != nil {
+                for i := len(created) - 1; i >= 0; i-- {
+                    _ = created[i].DeleteGroup(c.Request.Context(), name)
+                }
+                c.JSON(http.StatusBadGateway, gin.H{"error": p.Name() + ": " + err.Error()})
+                return
+            }
+            resourceIDs[p.Name()] = id
+            created = append(created, p)
+        }
+
+        g := store.CreateGroup(name)
+        g.K3sNamespace = resourceIDs["k3s"]
+        g.OpenStackProjectID = resourceIDs["openstack"]
+        c.JSON(http.StatusCreated, g)
 	})
 
 	r.GET("/groups", func(c *gin.Context) {

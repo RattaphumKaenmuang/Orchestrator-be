@@ -47,13 +47,17 @@ func NewOpenStackProvider() (*OpenStackProvider, error) {
 
 func (p *OpenStackProvider) Name() string { return "openstack" }
 
-func (p *OpenStackProvider) CreateGroup(_ context.Context, groupName string) error {
-	_, err := projects.Create(p.identityClient, projects.CreateOpts{
+func (p *OpenStackProvider) CreateGroup(_ context.Context, groupName string) (string, error) {
+	project, err := projects.Create(p.identityClient, projects.CreateOpts{
 		Name:     groupName,
 		DomainID: p.domainID,
 		Enabled:  gophercloud.Enabled,
 	}).Extract()
-	return err
+	if err != nil {
+		return "", err
+	}
+
+	return project.ID, nil
 }
 
 func (p *OpenStackProvider) DeleteGroup(_ context.Context, groupName string) error {

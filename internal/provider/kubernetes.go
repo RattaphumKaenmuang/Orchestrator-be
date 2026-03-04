@@ -45,14 +45,19 @@ func NewK3sProvider() (*K3sProvider, error) {
 
 func (p *K3sProvider) Name() string { return "k3s" }
 
-func (p *K3sProvider) CreateGroup(ctx context.Context, groupName string) error {
-	_, err := p.client.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
+func (p *K3sProvider) CreateGroup(ctx context.Context, groupName string) (string, error) {
+	ns, err := p.client.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{Name: groupName},
 	}, metav1.CreateOptions{})
+
 	if apierrors.IsAlreadyExists(err) {
-		return nil
+		return groupName, nil
 	}
-	return err
+	if err != nil {
+		return "", err
+	}
+
+	return ns.Name, nil
 }
 
 func (p *K3sProvider) DeleteGroup(ctx context.Context, groupName string) error {
