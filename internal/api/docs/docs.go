@@ -35,7 +35,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Creates a new Group.",
+                "description": "Creates a new Group (namespace in k3s + project in OpenStack). Rolls back on partial failure.",
                 "consumes": [
                     "application/json"
                 ],
@@ -65,13 +65,19 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid or missing name",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
                     },
                     "409": {
-                        "description": "Conflict",
+                        "description": "Group already exists",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Cloud provider error",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -81,7 +87,7 @@ const docTemplate = `{
         },
         "/groups/{name}": {
             "get": {
-                "description": "Returns one Group by its name.",
+                "description": "Returns one Group by its name, including its instances.",
                 "produces": [
                     "application/json"
                 ],
@@ -106,7 +112,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Group not found",
                         "schema": {
                             "$ref": "#/definitions/main.ErrorResponse"
                         }
@@ -190,7 +196,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{},
 	Title:            "Orchestrator API",
-	Description:      "Demo API for Group creation and inspection.",
+	Description:      "Demo API for multi-cloud Group and Instance orchestration.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

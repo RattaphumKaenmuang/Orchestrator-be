@@ -1,6 +1,6 @@
 package model
 
 type Group struct {
-	Name      string     `json:"string"`
+	Name      string     `json:"name"`
 	Instances []Instance `json:"instances"`
 }

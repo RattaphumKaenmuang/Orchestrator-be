@@ -43,7 +43,7 @@ definitions:
     type: object
 info:
   contact: {}
-  description: Demo API for Group creation and inspection.
+  description: Demo API for multi-cloud Group and Instance orchestration.
   title: Orchestrator API
   version: "1.0"
 paths:
@@ -63,7 +63,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a new Group.
+      description: Creates a new Group (namespace in k3s + project in OpenStack).
+        Rolls back on partial failure.
       parameters:
       - description: Group payload
         in: body
@@ -79,11 +80,15 @@ paths:
           schema:
             $ref: '#/definitions/model.Group'
         "400":
-          description: Bad Request
+          description: Invalid or missing name
           schema:
             $ref: '#/definitions/main.ErrorResponse'
         "409":
-          description: Conflict
+          description: Group already exists
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "502":
+          description: Cloud provider error
           schema:
             $ref: '#/definitions/main.ErrorResponse'
       summary: Create a group
@@ -91,7 +96,7 @@ paths:
       - groups
   /groups/{name}:
     get:
-      description: Returns one Group by its name.
+      description: Returns one Group by its name, including its instances.
       parameters:
       - description: Group name
         in: path
@@ -106,7 +111,7 @@ paths:
           schema:
             $ref: '#/definitions/model.Group'
         "404":
-          description: Not Found
+          description: Group not found
           schema:
             $ref: '#/definitions/main.ErrorResponse'
       summary: Get group by name
