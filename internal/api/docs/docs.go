@@ -119,6 +119,71 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/groups/{name}/instances": {
+            "post": {
+                "description": "Creates a new Instance. GPU \u003e 0 routes to k3s (pod), otherwise to OpenStack (server). Flavor is auto-matched.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "instances"
+                ],
+                "summary": "Create an instance in a group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group name",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Instance specs",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.createInstanceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Instance"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing fields",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Group not found",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Unknown provider",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    },
+                    "502": {
+                        "description": "Cloud provider error",
+                        "schema": {
+                            "$ref": "#/definitions/main.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -149,6 +214,30 @@ const docTemplate = `{
                 }
             }
         },
+        "main.createInstanceRequest": {
+            "type": "object",
+            "required": [
+                "cpu",
+                "name",
+                "ram"
+            ],
+            "properties": {
+                "cpu": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "gpu": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ram": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
         "model.Group": {
             "type": "object",
             "properties": {
@@ -158,7 +247,13 @@ const docTemplate = `{
                         "$ref": "#/definitions/model.Instance"
                     }
                 },
-                "string": {
+                "k3s_namespace": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "openstack_project_id": {
                     "type": "string"
                 }
             }
@@ -169,13 +264,21 @@ const docTemplate = `{
                 "cpu": {
                     "type": "integer"
                 },
+                "external_id": {
+                    "description": "k3s pod UID or openstack server ID",
+                    "type": "string"
+                },
                 "gpu": {
-                    "type": "boolean"
+                    "type": "integer"
                 },
                 "id": {
                     "type": "string"
                 },
+                "name": {
+                    "type": "string"
+                },
                 "provider": {
+                    "description": "\"k3s\" or \"openstack\"",
                     "type": "string"
                 },
                 "ram": {

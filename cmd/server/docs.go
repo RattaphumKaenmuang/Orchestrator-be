@@ -50,3 +50,19 @@ func listGroupsDocs() {}
 // @Failure 404 {object} ErrorResponse "Group not found"
 // @Router /groups/{name} [get]
 func getGroupDocs() {}
+
+// createInstanceDocs godoc
+// @Summary Create an instance in a group
+// @Description Creates a new Instance. GPU > 0 routes to k3s (pod), otherwise to OpenStack (server). Flavor is auto-matched.
+// @Tags instances
+// @Accept json
+// @Produce json
+// @Param name path string true "Group name"
+// @Param payload body createInstanceRequest true "Instance specs"
+// @Success 201 {object} model.Instance
+// @Failure 400 {object} ErrorResponse "Invalid or missing fields"
+// @Failure 404 {object} ErrorResponse "Group not found"
+// @Failure 500 {object} ErrorResponse "Unknown provider"
+// @Failure 502 {object} ErrorResponse "Cloud provider error"
+// @Router /groups/{name}/instances [post]
+func createInstanceDocs() {}

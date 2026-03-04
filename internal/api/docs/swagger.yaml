@@ -17,24 +17,51 @@ definitions:
       name:
         type: string
     type: object
+  main.createInstanceRequest:
+    properties:
+      cpu:
+        minimum: 1
+        type: integer
+      gpu:
+        type: integer
+      name:
+        type: string
+      ram:
+        minimum: 1
+        type: integer
+    required:
+    - cpu
+    - name
+    - ram
+    type: object
   model.Group:
     properties:
       instances:
         items:
           $ref: '#/definitions/model.Instance'
         type: array
-      string:
+      k3s_namespace:
+        type: string
+      name:
+        type: string
+      openstack_project_id:
         type: string
     type: object
   model.Instance:
     properties:
       cpu:
         type: integer
+      external_id:
+        description: k3s pod UID or openstack server ID
+        type: string
       gpu:
-        type: boolean
+        type: integer
       id:
         type: string
+      name:
+        type: string
       provider:
+        description: '"k3s" or "openstack"'
         type: string
       ram:
         type: integer
@@ -117,4 +144,48 @@ paths:
       summary: Get group by name
       tags:
       - groups
+  /groups/{name}/instances:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new Instance. GPU > 0 routes to k3s (pod), otherwise
+        to OpenStack (server). Flavor is auto-matched.
+      parameters:
+      - description: Group name
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: Instance specs
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.createInstanceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Instance'
+        "400":
+          description: Invalid or missing fields
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "404":
+          description: Group not found
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "500":
+          description: Unknown provider
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+        "502":
+          description: Cloud provider error
+          schema:
+            $ref: '#/definitions/main.ErrorResponse'
+      summary: Create an instance in a group
+      tags:
+      - instances
 swagger: "2.0"
