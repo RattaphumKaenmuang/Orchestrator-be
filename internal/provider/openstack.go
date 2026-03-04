@@ -79,3 +79,23 @@ func (p *OpenStackProvider) DeleteGroup(_ context.Context, groupName string) err
 	}
 	return nil
 }
+
+func (p *OpenStackProvider) GroupExists(_ context.Context, groupName string) (bool, error) {
+	allPages, err := projects.List(p.identityClient, projects.ListOpts{
+		Name:     groupName,
+		DomainID: p.domainID,
+	}).AllPages()
+	if err != nil {
+		return false, err
+	}
+	all, err := projects.ExtractProjects(allPages)
+	if err != nil {
+		return false, err
+	}
+	for _, proj := range all {
+		if proj.Name == groupName {
+			return true, nil
+		}
+	}
+	return false, nil
+}

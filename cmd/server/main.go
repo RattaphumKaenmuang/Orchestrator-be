@@ -53,27 +53,45 @@ func main() {
 			return
 		}
 
+		if _, exists := store.GetGroup(name); exists {
+			c.JSON(http.StatusConflict, gin.H{"error": "group already exists"})
+			return
+		}
+
+		// Check both clouds for pre-existing resources
+		for _, p := range providers {
+			exists, err := p.GroupExists(c.Request.Context(), name)
+			if err != nil {
+				c.JSON(http.StatusBadGateway, gin.H{"error": p.Name() + ": " + err.Error()})
+				return
+			}
+			if exists {
+				c.JSON(http.StatusConflict, gin.H{"error": "group already exists in " + p.Name()})
+				return
+			}
+		}
+
 		// Create in both clouds; rollback on failure
 		var created []provider.Provider
-        resourceIDs := make(map[string]string)
+		resourceIDs := make(map[string]string)
 
-        for _, p := range providers {
-            id, err := p.CreateGroup(c.Request.Context(), name)
-            if err != nil {
-                for i := len(created) - 1; i >= 0; i-- {
-                    _ = created[i].DeleteGroup(c.Request.Context(), name)
-                }
-                c.JSON(http.StatusBadGateway, gin.H{"error": p.Name() + ": " + err.Error()})
-                return
-            }
-            resourceIDs[p.Name()] = id
-            created = append(created, p)
-        }
+		for _, p := range providers {
+			id, err := p.CreateGroup(c.Request.Context(), name)
+			if err != nil {
+				for i := len(created) - 1; i >= 0; i-- {
+					_ = created[i].DeleteGroup(c.Request.Context(), name)
+				}
+				c.JSON(http.StatusBadGateway, gin.H{"error": p.Name() + ": " + err.Error()})
+				return
+			}
+			resourceIDs[p.Name()] = id
+			created = append(created, p)
+		}
 
-        g := store.CreateGroup(name)
-        g.K3sNamespace = resourceIDs["k3s"]
-        g.OpenStackProjectID = resourceIDs["openstack"]
-        c.JSON(http.StatusCreated, g)
+		g := store.CreateGroup(name)
+		g.K3sNamespace = resourceIDs["k3s"]
+		g.OpenStackProjectID = resourceIDs["openstack"]
+		c.JSON(http.StatusCreated, g)
 	})
 
 	r.GET("/groups", func(c *gin.Context) {

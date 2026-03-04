@@ -67,3 +67,14 @@ func (p *K3sProvider) DeleteGroup(ctx context.Context, groupName string) error {
 	}
 	return err
 }
+
+func (p *K3sProvider) GroupExists(ctx context.Context, groupName string) (bool, error) {
+	_, err := p.client.CoreV1().Namespaces().Get(ctx, groupName, metav1.GetOptions{})
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
